@@ -1,0 +1,115 @@
+## ✅ **Example: Functional Coverage with Address, RW, and Data**
+
+---
+
+### **1. Class Definition with Covergroup**
+
+```systemverilog
+class Transaction;
+
+    // Randomized transaction fields
+    rand bit [3:0] addr;
+    rand bit rw;           // 0 = Read, 1 = Write
+    rand bit [7:0] data;
+
+    // Functional coverage definition
+    covergroup trans_cov @(posedge clk);
+
+        // Coverpoint on address range
+        coverpoint addr {
+            bins low  = {[0:3]};
+            bins mid  = {[4:7]};
+            bins high = {[8:15]};
+        }
+
+        // Coverpoint on RW operation
+        coverpoint rw {
+            bins read  = {0};
+            bins write = {1};
+        }
+
+        // Coverpoint on data range
+        coverpoint data {
+            bins small  = {[0:63]};
+            bins medium = {[64:127]};
+            bins large  = {[128:255]};
+        }
+
+        // Cross coverage
+        cross addr, rw;
+        cross rw, data;
+
+    endgroup
+
+    // Constructor
+    function new();
+        trans_cov = new();
+    endfunction
+
+    // Print method
+    function void display();
+        $display("ADDR: %0d, RW: %0b, DATA: %0d", addr, rw, data);
+    endfunction
+
+endclass
+```
+
+---
+
+### **2. Testbench to Randomize and Sample**
+
+```systemverilog
+module tb;
+
+    logic clk;
+    Transaction tr;
+
+    // Clock generation: 10ns period
+    initial clk = 0;
+    always #5 clk = ~clk;
+
+    initial begin
+        tr = new();
+
+        $display("Starting transaction stimulus and coverage sampling...\n");
+
+        repeat (30) begin
+            assert(tr.randomize());      // Generate new values
+            @(posedge clk);             // Wait for clock edge
+            tr.trans_cov.sample();      // Sample coverage
+            tr.display();               // Print the transaction
+        end
+
+        $display("\nSimulation completed. Check simulator coverage report.\n");
+        $finish;
+    end
+
+endmodule
+```
+
+---
+
+## ✅ Key Points
+
+| Feature       | Purpose                             |
+| ------------- | ----------------------------------- |
+| `covergroup`  | Collects coverage information       |
+| `coverpoint`  | Tracks specific variable ranges     |
+| `cross`       | Tracks combinations of variables    |
+| `sample()`    | Captures values at each clock cycle |
+| `randomize()` | Stimulates design with varied input |
+
+---
+
+## ✅ What to Do After Simulation
+
+To view coverage:
+
+* Run the simulation in a tool like **Questa**, **VCS**, or **Xcelium** with coverage enabled.
+* Generate a report or GUI view of:
+
+  * Hit/miss bins
+  * Cross coverage
+  * Total coverage %
+
+
